@@ -47,3 +47,5 @@ When you have written the command function add it to the **vector_table[]** arra
 Preferrably don't make the usage descriptions longer than a line. (~80 chars)
 If you need to be able to convey more information on the usage consider using a -h flag in your command function to supply more info
 
+That is all you need to do then just recompile and the new command should be available. It will also automatically have its own entry when you run **help**
+
