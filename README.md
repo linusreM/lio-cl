@@ -1,69 +1,49 @@
 <br>
 
-# GPIO Example
+# Lab IO card test package
 
 
-This project demonstrates how to initialize and use GPIO on GD32VF103 using the vendor API.
-The longan nano green and red LEDs are used as outputs while pins A3 and A4 are used as inputs
-with internal pull-ups enabled.
+This project contains testing/utility firmware for the **GD32VF** based development board and for the accompanying peripheral IO-card, designed for educational purposes at KTH.
 
-The functions can be used for simple digital control of for example LEDs and to read the state of buttons.
+The firmware consists of a command line interface from which you can test different functionality of the board.
 
-The example code itself checks the pins A3 and A4 and blinks the red and green leds according to if they are connected to ground or not.
+## Using the firmware
 
-All the needed code in this project is available in the **app.c** file.
+To use the application load the program into the board under test. Then connect the board to your computer using the USB connector. Oopen up a serial terminal and connect to the board, usually /dev/ttyACM0 in linux. Baud rate should not matter since it is only emulating a serial adapter. 
+
+Then press **k** when prompted to start the interpreter.
+
+Run a command by typing it's name and pressing enter.
+
+Arguments to functions are added by typing them after the command with a space as a separator.
+
+Type **help** to see the available commands and their usage.
 <br><br>
 
-## Functions Used
+## Running scripts
+
+Also included in this package (**scripts/**) are some example scripts using the command line to automate tasks.
+
+To run a script you need **python 3** and **pySerial** installed.
+
+When writing scripts make sure that each line sent is terminated by **\r** to trigger execution. Also make sure not to send commands faster than they can be consumed. The interpreter only buffers one command.
+<br><br>
+
+## Adding commands
+
+The firmware is written so that it is easy to add new commands. To add a new command simply write a function in the form of
 ```c
-void rcu_periph_clock_enable(rcu_periph_enum periph)
+    int example_command(int argc, char* argv[]);
 ```
-The RCU (reset and clock unit) controls activation of peripherals. So for each peripheral used a corresponding clock enable needs to be called. For this example GPIOA and GPIOB gets activated. The advantage of this is that any peripheral that is unneded doesn't consume any power.
-
+**argc** will be the number of arguments supplied with the command. Arguments to the function are supplied as separate strings in **argv[]**. The first argument is always the name of the command. If you need for example an integer just parse the appropriate index in **argv[]** like:
 ```c
-void gpio_init(uint32_t gpio_periph, uint32_t mode, uint32_t speed, uint32_t pin)
+    n = itoa(argv[i]);
 ```
-This function initializes GPIO pins. 
-
-- uint32_t **gpio_periph**
-    - Which port to select, use GPIOA, GPIOB, GPIOC et.c.
-- uint32_t **mode**
-    - Selects pin mode. GD32V103 supports more than just input and output. The following settings can be used:
-        - **GPIO_MODE_OUT_PP** - Output with push-pull
-        - **GPIO_MODE_OUT_OD** - Output with open-drain
-        - **GPIO_MODE_IN_FLOATING** - Input floating
-        - **GPIO_MODE_IPD** - Input with internal pull-down
-        - **GPIO_MODE_IPU** - Input with internal pull-up
-- uint32_t **speed**
-    - Speed mode of the GPIO. Controls the slew-rate of the pins, and therefore produces less noise with the lower settings. Use the following:
-        - **GPIO_OSPEED_50MHZ**
-        - **GPIO_OSPEED_10MHZ**
-        - **GPIO_OSPEED_2MHZ**
-- uint32_t **pin**
-    - Selects which pin to use. Use:
-        - **GPIO_PIN*x***
-
+When you have written the command function add it to the **vector_table[]** array in the following form:
 ```c
-void gpio_bit_write(uint32_t gpio_periph, uint32_t pin, bit_status bit_value)
+    {"command-name", &example_command, 
+     "[argument 1] [argument 2] How to use the command"},
 ```
-This function is used to write a value to the GPIO. Keep in mind that GD32V103 uses 3.3V logic so logical high = 3.3V and logical low = 0V
-- uint32_t **gpio_periph**
-    - Same as above, use GPIOA, GPIOB etc
-- uint32_t **pin**
-    - Same as above use GPIO_PINx
-- bit_status **bit_value**
-    - Which state to set the pin to. Use:
-        - **SET** - Logical high, 3.3V
-        - **1** - Logical high
-        - **RESET** - Logical low, 0V(GND)
-        - **0** - Logical low
+Preferrably don't make the usage descriptions longer than a line. (~80 chars)
+If you need to be able to convey more information on the usage consider using a -h flag in your command function to supply more info
 
-```c
-FlagStatus gpio_input_bit_get(uint32_t gpio_periph, uint32_t pin)
-```
-This function is used to read a pins state. Reads can be done on both inputs and outputs. It returns either RESET(0) or SET(1) based on the current state of the pin.
-
-- uint32_t **gpio_periph**
-    - GPIO port select, GPIOA, GPIOB et.c.
-- uint32_t **pin**
-    - GPIO pin, use GPIO_PINx
